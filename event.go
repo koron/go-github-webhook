@@ -40,13 +40,14 @@ type PushEvent struct {
 	Repository Repository
 }
 
-func (r *Event) PushEvent() (*PushEvent, error) {
-	if r.Header.Event != "push" {
-		return nil, nil
+func (r *Event) PushEvent() (*PushEvent) {
+	if r.Header.EventType != "push" {
+		return nil
 	}
-	var event PushEvent
-	if err := json.Unmarshal(r.Body, &event); err != nil {
-		return nil, err
+	event := new(PushEvent)
+	if err := json.Unmarshal(r.Body, event); err != nil {
+		logErr(err)
+		return nil
 	}
-	return &event, nil
+	return event
 }

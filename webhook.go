@@ -17,7 +17,7 @@ var BodyMaxLen int64 = 1024 * 1024
 
 // Header represents webhook's delivery headers.
 type Header struct {
-	Event     string
+	EventType string
 	Signature string
 	Deliverty string
 }
@@ -31,7 +31,7 @@ type Event struct {
 
 func parseHeader(r *http.Request) *Header {
 	return &Header{
-		Event:     r.Header.Get("X-Github-Event"),
+		EventType: r.Header.Get("X-Github-Event"),
 		Signature: r.Header.Get("X-Hub-Signature"),
 		Deliverty: r.Header.Get("X-Github-Delivery"),
 	}

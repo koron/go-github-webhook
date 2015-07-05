@@ -8,12 +8,13 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", webhook.PushHandler(func(raw *webhook.Event) {
-		ev, err := raw.PushEvent()
-		if err != nil {
+	webhook.SetSecret([]byte("abcdefgh"))
+	http.HandleFunc("/", webhook.HandlePush(func(ev *webhook.Event) {
+		push := ev.PushEvent()
+		if push == nil {
 			return
 		}
-		log.Printf("%#v", ev)
+		log.Printf("push: verified=%v %#v", ev.Verified, push)
 	}))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

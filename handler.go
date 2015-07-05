@@ -1,42 +1,43 @@
 package webhook
 
-import (
-	"log"
-	"net/http"
-	"os"
-)
+import "net/http"
 
 var (
-	Secret []byte
-	Logger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	secret []byte
 )
 
-func secret() []byte {
-	return Secret
+func getSecret() []byte {
+	return secret
 }
 
-func logErr(err error) {
-	if Logger == nil {
-		return
-	}
-	Logger.Printf("webhoook error: %s", err)
-	return
+func SetSecret(v []byte) {
+	secret = v
 }
 
-type HandlerFunc func(raw *Event)
+type HandlerFunc func(ev *Event)
 
-func PushHandler(f HandlerFunc) http.HandlerFunc {
+func Handle(f HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		raw, err := Parse(r, secret())
+		ev, err := Parse(r, getSecret())
 		if err != nil {
 			logErr(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		if raw.Header.Event != "push" {
+		f(ev)
+	}
+}
+
+func filterHandle(eventType string, f HandlerFunc) http.HandlerFunc {
+	return Handle(func(ev *Event) {
+		if ev.Header.EventType != eventType {
 			return
 		}
-		f(raw)
-	}
+		f(ev)
+	})
+}
+
+func HandlePush(f HandlerFunc) http.HandlerFunc {
+	return filterHandle("push", f)
 }
