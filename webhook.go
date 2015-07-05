@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// BodyMaxLen limits max size of payload.
 var BodyMaxLen int64 = 1024 * 1024
 
 // Header represents webhook's delivery headers.
@@ -21,7 +22,8 @@ type Header struct {
 	Deliverty string
 }
 
-type RawEvent struct {
+// Event represents raw event of Github's webhook.
+type Event struct {
 	Header   Header
 	Body     []byte
 	Verified bool
@@ -73,7 +75,7 @@ func verifySignature(header *Header, body, secret []byte) (bool, error) {
 }
 
 // Parse parses a HTTP request as Github's webhook.
-func Parse(r *http.Request, secret []byte) (*RawEvent, error) {
+func Parse(r *http.Request, secret []byte) (*Event, error) {
 	head, body, err := split(r)
 	if err != nil {
 		return nil, err
@@ -82,7 +84,7 @@ func Parse(r *http.Request, secret []byte) (*RawEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RawEvent{
+	return &Event{
 		Header:   *head,
 		Body:     body,
 		Verified: verified,
