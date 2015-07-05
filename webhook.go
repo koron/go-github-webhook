@@ -3,10 +3,13 @@ package webhook
 import (
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 var BodyMaxLen int64 = 1024 * 1024
@@ -18,8 +21,10 @@ type Header struct {
 	Deliverty string
 }
 
-// Payload represents webhook's payload.
-type Payload struct {
+type RawEvent struct {
+	Header   Header
+	Body     []byte
+	Verified bool
 }
 
 func parseHeader(r *http.Request) *Header {
@@ -30,7 +35,7 @@ func parseHeader(r *http.Request) *Header {
 	}
 }
 
-func Split(r *http.Request) (*Header, []byte, error) {
+func split(r *http.Request) (*Header, []byte, error) {
 	if r.ContentLength == 0 || r.Body == nil {
 		return nil, nil, errors.New("no body")
 	} else if r.ContentLength > BodyMaxLen {
@@ -43,18 +48,43 @@ func Split(r *http.Request) (*Header, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	// TODO:
 	return h, body, nil
 }
 
-func verify(key, signature, message []byte) bool {
-	hash := hmac.New(sha1.New, key)
-	hash.Write(message)
-	mac := hash.Sum(nil)
-	return hmac.Equal(signature, mac)
+func verify(h hash.Hash, body, signature []byte) (bool, error) {
+	h.Write(body)
+	mac := h.Sum(nil)
+	return hmac.Equal(mac, signature), nil
+}
+
+func verifySignature(header *Header, body, secret []byte) (bool, error) {
+	s := header.Signature
+	if s == "" {
+		return false, nil
+	}
+	if strings.HasPrefix(s, "sha1=") {
+		signature, err := hex.DecodeString(s[5:])
+		if err != nil {
+			return false, err
+		}
+		return verify(hmac.New(sha1.New, secret), body, signature)
+	}
+	return false, errors.New("unknown signature type")
 }
 
 // Parse parses a HTTP request as Github's webhook.
-func Parse(r *http.Request) {
-	//h := parseHeader(r)
+func Parse(r *http.Request, secret []byte) (*RawEvent, error) {
+	head, body, err := split(r)
+	if err != nil {
+		return nil, err
+	}
+	verified, err := verifySignature(head, body, secret)
+	if err != nil {
+		return nil, err
+	}
+	return &RawEvent{
+		Header:   *head,
+		Body:     body,
+		Verified: verified,
+	}, nil
 }
