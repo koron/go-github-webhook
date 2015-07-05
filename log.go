@@ -6,13 +6,18 @@ import (
 )
 
 var (
-	Logger *log.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	logger = log.New(os.Stderr, "", log.LstdFlags)
 )
 
+// SetLogger set logger object for webhook
+func SetLogger(l *log.Logger) {
+	logger = l
+}
+
 func logErr(err error) {
-	if Logger == nil {
+	if logger == nil {
 		return
 	}
-	Logger.Printf("webhoook error: %s", err)
+	logger.Printf("webhoook error: %s", err)
 	return
 }

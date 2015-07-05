@@ -10,12 +10,15 @@ func getSecret() []byte {
 	return secret
 }
 
+// SetSecret set secret to verify webhook payload.
 func SetSecret(v []byte) {
 	secret = v
 }
 
+// HandlerFunc handles webhook events.
 type HandlerFunc func(ev *Event)
 
+// Handle generates http.HandlerFunc to handle webhook events.
 func Handle(f HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ev, err := Parse(r, getSecret())
@@ -38,6 +41,7 @@ func filterHandle(eventType string, f HandlerFunc) http.HandlerFunc {
 	})
 }
 
+// HandlePush generates http.HandlerFunc to handle webhook push events.
 func HandlePush(f HandlerFunc) http.HandlerFunc {
 	return filterHandle("push", f)
 }

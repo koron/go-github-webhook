@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 )
 
+// Repository represents a Github's repository.
 type Repository struct {
 	Name        string
 	FullName    string
 	Private     bool
-	HTML_URL    string `json:"html_url"`
+	HTMLURL     string `json:"html_url"`
 	Description string
 	Fork        bool
 	URL         string
@@ -17,6 +18,7 @@ type Repository struct {
 	PushedAt    int64  `json:"pushed_at"`
 }
 
+// Commit represents a Github's commit.
 type Commit struct {
 	ID        string
 	Distinct  bool
@@ -28,6 +30,7 @@ type Commit struct {
 	Modified  []string
 }
 
+// PushEvent represents a Github's webhook push event.
 type PushEvent struct {
 	Ref        string
 	Before     string
@@ -40,7 +43,8 @@ type PushEvent struct {
 	Repository Repository
 }
 
-func (r *Event) PushEvent() (*PushEvent) {
+// PushEvent returns a PushEvent struct.
+func (r *Event) PushEvent() *PushEvent {
 	if r.Header.EventType != "push" {
 		return nil
 	}
